@@ -1,8 +1,27 @@
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const body = req.body;
+  try {
+    if (req.method !== 'POST') {
+      return res.status(200).send('OK');
+    }
 
-    const replyToken = body.events[0].replyToken;
+    const body = req.body || {};
+    const events = body.events || [];
+
+    if (events.length === 0) {
+      return res.status(200).send('OK');
+    }
+
+    const event = events[0];
+
+    if (
+      event.type !== 'message' ||
+      !event.message ||
+      event.message.type !== 'text'
+    ) {
+      return res.status(200).send('OK');
+    }
+
+    const replyToken = event.replyToken;
 
     await fetch('https://api.line.me/v2/bot/message/reply', {
       method: 'POST',
@@ -11,7 +30,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
       },
       body: JSON.stringify({
-        replyToken: replyToken,
+        replyToken,
         messages: [
           {
             type: 'text',
@@ -21,8 +40,8 @@ export default async function handler(req, res) {
       })
     });
 
-    return res.status(200).end();
+    return res.status(200).send('OK');
+  } catch (error) {
+    return res.status(200).send('OK');
   }
-
-  return res.status(200).send('OK');
 }
